@@ -5,7 +5,7 @@ import jwt_decode from 'jwt-decode';
 import FileBase from 'react-file-base64';
 import YouTube from 'react-youtube';
 
-import { Container, Row, Col, Form, ListGroup, Button, Modal, Spinner } from 'react-bootstrap';
+import { Navbar, Container, Row, Col, Form, ListGroup, Button, Modal, Spinner } from 'react-bootstrap';
 
 import UserContext from '../context/UserContext';
 import { getPostsURL, createPostURL, deleteAccountURL, deletePostURL } from '../urls';
@@ -26,6 +26,7 @@ const User = () => {
     const [user, setUser] = useState();
     const [content, setContent] = useState([]);
     const [currentVideo, setCurrentVideo] = useState();
+    const [loadingStatus, setloadingStatus] = useState(false);
     const [uploadingStatus, setUploadingStatus] = useState(false);
     const [deletingStatus, setDeletingStatus] = useState(false);
 
@@ -43,20 +44,24 @@ const User = () => {
         //Need mountin/unmounting otherwise setContent in useEffect will result in memory error
         let unmounted = false;
 
-        setUser(currentUser);
-
         try {
             //Requests all the posts by current user
             const { data } = await axios.get(getPostsURL, { headers: { 'auth-token': currentToken } });
             if (!unmounted) {
+                setUser(currentUser);
+                setloadingStatus(true);
                 setContent(data);
-                setCurrentVideo(data[0].youTubeLink);
+                if (data.length > 0) setCurrentVideo(data[0].youTubeLink);
             }
         } catch (error) {
             console.log(error);
         }
 
-        return () => unmounted = true;
+        //Clean up function to prevent memory leak.
+        return () => {
+            unmounted = true;
+            setloadingStatus(false);
+        }
     }
         , []);
 
@@ -64,55 +69,51 @@ const User = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        //Accepts YouTube link and return YouTube id
-        //i.e. https://www.youtube.com/watch?v=Zi_XLOBDo_Y --> Zi_XLOBDo_Y
-        const getYouTubeId = (link) => {
-            var [youTubeId, concatString] = ['', false];
+        if (document.getElementById('youTubeLink').value.includes('youtube.com/watch?v=')) {
 
-            for (var i = 0; i < link.length; i++) {
-                if (concatString === true) youTubeId += link[i];
-                if (link[i] === '=') concatString = true;
+            //Accepts YouTube link and return YouTube id
+            //i.e. https://www.youtube.com/watch?v=Zi_XLOBDo_Y --> Zi_XLOBDo_Y
+            const getYouTubeId = (link) => {
+                var [youTubeId, concatString] = ['', false];
+
+                for (var i = 0; i < link.length; i++) {
+                    if (concatString === true) youTubeId += link[i];
+                    if (link[i] === '=') concatString = true;
+                }
+
+                return youTubeId;
             }
 
-            return youTubeId;
-        }
+            try {
 
-        try {
+                setUploadingStatus(true);
 
-            setUploadingStatus(true);
-
-            //Send data to databse
-            //Important: When sending token in post request, 1st parameter is URL, 2nd is body, 3rd is header (order matters)
-            const { data } = await axios.post(createPostURL,
-                {
-                    post: document.getElementById('post').value,
-                    selectedFile: tempFile,
-                    userID: jwt_decode(currentToken).data._id,
-                    youTubeLink: getYouTubeId(document.getElementById('youTubeLink').value),
-                },
-                {
-                    headers:
+                //Send data to databse
+                //Important: When sending token in post request, 1st parameter is URL, 2nd is body, 3rd is header (order matters)
+                const { data } = await axios.post(createPostURL,
                     {
-                        'auth-token': currentToken
+                        post: document.getElementById('post').value,
+                        selectedFile: tempFile,
+                        userID: jwt_decode(currentToken).data._id,
+                        youTubeLink: getYouTubeId(document.getElementById('youTubeLink').value),
+                    },
+                    {
+                        headers:
+                        {
+                            'auth-token': currentToken
+                        }
                     }
-                }
-            );
+                );
 
-            //Change state (local) according to data returned from database
-            setContent([...content, data.savedPost
-                /*...content,
-                { _id: data.savedPost._id },
-                { post: data.savedPost.post },
-                { selectedFile: data.savedPost.selectedFile },
-                { youTubeLink: data.savedPost.youTubeLink },
-                { tags: data.savedPost.tags },*/
-            ]);
-        } catch (error) {
-            console.log(error);
-        }
+                //Change state (local) according to data returned from database
+                setContent([...content, data.savedPost]);
+            } catch (error) {
+                console.log(error);
+            }
 
-        setUploadingStatus(false);
+            setUploadingStatus(false);
 
+        } else alert('Invalid YouTube Link');
     }
 
     const handleLogOut = () => {
@@ -169,119 +170,120 @@ const User = () => {
     }
 
     return (
-        <>{
-            //Check if token expire. If so, log out.
-            jwt_decode(currentToken).exp > Date.now() / 1000 ?
-                <Router>
-                    <Container >
-
-                        <Col sm='12' md='4' lg='2' style={columnStyle}>
+        <>
+            {
+                //Check if token expire. If so, log out.
+                jwt_decode(currentToken).exp > Date.now() / 1000 ?
+                    <Router>
+                        <Container >
 
                             <ListGroup style={{
                                 margin: '10px 0',
                             }}>
                                 <ListGroup.Item style={{
-                                    background: `linear-gradient(25deg,#d64c7f,#ee4758 50%)`,
+                                    background: `linear-gradient(25deg,#1f57db,#3483e3 50%)`,
                                     color: 'white',
                                 }}>
-                                    <h1>Hi, {user}!</h1>
-                                    <Link to='/'>
-                                        <Button onClick={handleLogOut} variant='outline-light'>Log Out</Button>
-                                    </Link>
-                                    <Button
-                                        onClick={deleteAccount}
-                                        variant='outline-dark'
-                                        style={{ float: 'right' }}
-                                    >
-                                        Delete Account
-                                    </Button>
+                                    <span style={{ fontSize: '1.5rem' }}>Hi, {user}!</span>
+                                    <span style={{ float: 'right' }}>
+                                        <Link to='/'>
+                                            <Button onClick={handleLogOut} variant='outline-light' style={{ margin: '0 5px' }}>Log Out</Button>
+                                        </Link>
+                                        <Button onClick={deleteAccount} variant='outline-light' >Delete Account</Button>
+                                    </span>
                                 </ListGroup.Item>
                             </ListGroup>
 
-                            <Form onSubmit={handleSubmit}>
-                                <ListGroup>
-                                    <ListGroup.Item style={{
-                                        background: `linear-gradient(25deg,#d64c7f,#ee4758 50%)`,
-                                        color: 'white',
-                                        fontSize: '1.25rem',
-                                        textAlign: 'center',
-                                    }}>
-                                        <Form.Label>Create A New Playlist</Form.Label>
-                                    </ListGroup.Item>
-                                    <ListGroup.Item>
-                                        <Form.Control id='post' placeholder="Video Name" />
-                                    </ListGroup.Item>
-                                    <ListGroup.Item>
-                                        <FileBase
-                                            id='file'
-                                            type="file"
-                                            multiple={false}
-                                            onDone={({ base64 }) => setTempFile(base64)}
-                                        />
-                                        <Form.Text className="text-muted">
-                                            Choose a photo representing your video (5MB max)
+                            <Col sm='12' md='4' lg='2' style={columnStyle}>
+
+                                <Form onSubmit={handleSubmit}>
+                                    <ListGroup>
+                                        <ListGroup.Item style={{
+                                            background: `linear-gradient(25deg,#1f57db,#3483e3 50%)`,
+                                            color: 'white',
+                                            fontSize: '1.25rem',
+                                            textAlign: 'center',
+                                        }}>
+                                            <Form.Label>Create A New Playlist</Form.Label>
+                                        </ListGroup.Item>
+                                        <ListGroup.Item>
+                                            <Form.Control id='post' placeholder="Video Name" />
+                                        </ListGroup.Item>
+                                        <ListGroup.Item>
+                                            <FileBase
+                                                id='file'
+                                                type="file"
+                                                multiple={false}
+                                                onDone={({ base64 }) => setTempFile(base64)}
+                                            />
+                                            <Form.Text className="text-muted">
+                                                Choose a photo representing your video (5MB max)
                                         </Form.Text>
-                                    </ListGroup.Item>
-                                    <ListGroup.Item>
-                                        <Form.Control id='youTubeLink' placeholder="YouTube Link" />
-                                        <Form.Text className="text-muted">
-                                            https://www.youtube.com/watch?v=Zi_XLOBDo_Y
+                                        </ListGroup.Item>
+                                        <ListGroup.Item>
+                                            <Form.Control id='youTubeLink' placeholder="YouTube Link" />
+                                            <Form.Text className="text-muted">
+                                                https://www.youtube.com/watch?v=Zi_XLOBDo_Y
                                         </Form.Text>
-                                    </ListGroup.Item>
-                                    <ListGroup.Item>
-                                        <Button type="submit" style={{
-                                            background: `linear-gradient(25deg,#d64c7f,#ee4758 50%)`,
-                                            border: 'none',
-                                        }}>Submit</Button>
+                                        </ListGroup.Item>
+                                        <ListGroup.Item>
+                                            <Button type="submit" style={{
+                                                background: `linear-gradient(25deg,#1f57db,#3483e3 50%)`,
+                                                border: 'none',
+                                            }}>Submit</Button>
+                                            {
+                                                uploadingStatus ? <Spinner animation="border" role="status" /> : <></>
+                                            }
+                                        </ListGroup.Item>
+                                    </ListGroup>
+                                </Form>
+                            </Col>
+
+                            <Col sm='12' md='4' lg='8' style={columnStyle}>
+                                <YouTube videoId={currentVideo ? currentVideo : 'Zi_XLOBDo_Y'} />
+                            </Col>
+
+                            <Col sm='12' md='8' lg='12' style={/*columnStyle*/{
+                                margin: 'auto',
+                                float: 'left',
+                            }}>
+                                {
+                                    loadingStatus ? <Row >
                                         {
-                                            uploadingStatus ? <Spinner animation="border" role="status" /> : <></>
-                                        }
-                                    </ListGroup.Item>
-                                </ListGroup>
-                            </Form>
-                        </Col>
-
-                        <Col sm='12' md='4' lg='8' style={columnStyle}>
-                            <YouTube videoId={currentVideo ? currentVideo : 'Zi_XLOBDo_Y'} />
-                        </Col>
-
-                        <Col sm='12' md='8' lg='12' style={/*columnStyle*/{
-                            margin: 'auto',
-                            float: 'right',
-                        }}>
-
-                            <Row style={{ float: 'center' }}>
-                                {
-                                    content.map(m =>
-                                        <Col key={m._id}>
-                                            <span
-                                                onClick={() => deletePlaylist(m._id)}
-                                                style={{ cursor: 'pointer', position: 'absolute' }}
-                                            >
-                                                ❌
+                                            content.map(picture =>
+                                                <Col key={picture._id} style={{ textAlign: 'center' }} >
+                                                    <span
+                                                        onClick={() => deletePlaylist(picture._id)}
+                                                        style={{ cursor: 'pointer', position: 'absolute' }}
+                                                    >
+                                                        ❌
                                             </span>
-                                            <img src={m.selectedFile} style={{ borderRadius: '10px', height: '150px', margin: '5px' }} onClick={() => setCurrentVideo(m.youTubeLink)} />
-                                        </Col>
-                                    )
+                                                    <img
+                                                        src={picture.selectedFile}
+                                                        style={{ borderRadius: '10px', height: '150px', margin: '5px' }}
+                                                        onClick={() => setCurrentVideo(picture.youTubeLink)}
+                                                    />
+                                                </Col>
+                                            )
+                                        }
+                                        {
+                                            deletingStatus ? <>Deleting<Spinner animation="border" role="status" /></> : <></>
+                                        }
+                                    </Row> : <Col style={{ textAlign: 'center' }}><Spinner animation="border" role="status" /> Loading Content</Col>
                                 }
-                                {
-                                    deletingStatus ? <>Deleting<Spinner animation="border" role="status" /></> : <></>
-                                }
-                            </Row>
+                            </Col>
 
+                        </Container>
 
-                        </Col>
-                    </Container>
-
-
-                </Router>
-                : <>
-                    {
-                        //Logout if token expires
-                        handleLogOut()
-                    }
-                </>
-        }</>
+                    </Router>
+                    : <>
+                        {
+                            //Logout if token expires
+                            handleLogOut()
+                        }
+                    </>
+            }
+        </>
     );
 
 }

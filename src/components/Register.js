@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import axios from 'axios';
 
-import { Container, Col, Form, ListGroup, Button } from 'react-bootstrap';
+import { Container, Col, Form, ListGroup, Button, Spinner } from 'react-bootstrap';
 
 import { registerURL } from '../urls';
 
@@ -17,6 +17,7 @@ const inputStyle = {
 
 const Register = () => {
     let history = useHistory();
+    const [registeringStatus, setRegisteringStatus] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -30,10 +31,16 @@ const Register = () => {
         try {
             await axios.post(registerURL, userInfo);
 
+            //setRegisteringStatus(true);
+
             history.push('/login');
         } catch (error) {
             alert(error.response.data);
         }
+
+        //Cleanup function to prevent memory leak.
+        //https://stackoverflow.com/questions/59794079/memory-leak-issue-when-trying-to-update-state-in-useeffect-react-native
+        return () => setRegisteringStatus(false);
     }
 
     const switchToLogin = () => history.push('/login')
@@ -44,7 +51,10 @@ const Register = () => {
                 <Col sm='12' md='8' lg='6' style={columnStyle}>
                     <Form onSubmit={handleSubmit}>
                         <ListGroup >
-                            <ListGroup.Item onClick={switchToLogin} style={{ textAlign: 'center' }} >
+                            <ListGroup.Item onClick={switchToLogin} style={{
+                                fontSize: '1.25rem',
+                                textAlign: 'center',
+                            }} >
                                 Registration
                             </ListGroup.Item>
                             <ListGroup.Item >
@@ -60,7 +70,7 @@ const Register = () => {
                                 </Form.Text>
                             </ListGroup.Item>
                             <ListGroup.Item >
-                                <Form.Control type="password" id='password' placeholder='password' style={inputStyle} />
+                                <Form.Control type="password" id='password' placeholder='password' autoComplete="off" style={inputStyle} />
                                 <Form.Text className="text-muted">
                                     Min. 6 characters
                                 </Form.Text>
@@ -82,6 +92,12 @@ const Register = () => {
                             <ListGroup.Item >
                                 • Your account, including email and posts, may be deleted from the database at the admin's discretion.
                             </ListGroup.Item>
+                            {/*
+                                registeringStatus ?
+                                    <ListGroup.Item style={{ textAlign: 'center' }}>
+                                        <Spinner animation="border" role="status" /> Registering...
+                                </ListGroup.Item> : <></>
+                            */}
                         </ListGroup>
                     </Form>
                 </Col>

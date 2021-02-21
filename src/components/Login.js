@@ -3,7 +3,7 @@ import { useHistory } from 'react-router-dom';
 import axios from 'axios';
 import jwt_decode from 'jwt-decode';
 
-import { Container, Col, Form, ListGroup, Button } from 'react-bootstrap';
+import { Container, Col, Form, ListGroup, Button, Spinner } from 'react-bootstrap';
 
 import UserContext from '../context/UserContext';
 import { loginURL } from '../urls';
@@ -20,6 +20,7 @@ const inputStyle = {
 const Login = () => {
     let history = useHistory();
     const { currentToken, setCurrentToken, currentUser, setCurrentUser } = useContext(UserContext);
+    const [logginginStatus, setLoggingStatus] = useState(false);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -31,6 +32,8 @@ const Login = () => {
 
         try {
             const { data } = await axios.post(loginURL, userInfo);
+
+            setLoggingStatus(true);
 
             const token = data;
             const decoded = jwt_decode(token);
@@ -52,6 +55,9 @@ const Login = () => {
             alert('Wrong Username and/or Password.');
             console.log(error);
         }
+
+        //Clean up function to prevent memory leak;
+        return () => setLoggingStatus(false);
     }
 
     //Toggle between Login and Registration pages
@@ -62,7 +68,11 @@ const Login = () => {
             <Col sm='12' md='8' lg='6' style={columnStyle}>
                 <Form onSubmit={handleLogin}>
                     <ListGroup >
-                        <ListGroup.Item onClick={switchToRegistration} style={{ textAlign: 'center' }}>Login</ListGroup.Item>
+                        <ListGroup.Item onClick={switchToRegistration}
+                            style={{
+                                fontSize: '1.25rem',
+                                textAlign: 'center',
+                            }}>Login</ListGroup.Item>
                         <ListGroup.Item >
                             <Form.Control id='username' placeholder='username' style={inputStyle} />
                             <Form.Text className="text-muted">
@@ -70,7 +80,7 @@ const Login = () => {
                             </Form.Text>
                         </ListGroup.Item>
                         <ListGroup.Item >
-                            <Form.Control type="password" id='password' placeholder='password' style={inputStyle} />
+                            <Form.Control type="password" id='password' placeholder='password' autoComplete="off" style={inputStyle} />
                             <Form.Text className="text-muted">
                                 Min. 6 characters
                             </Form.Text>
@@ -83,6 +93,12 @@ const Login = () => {
                                 Switch to Registration
                             </Button>
                         </ListGroup.Item>
+                        {
+                            logginginStatus ?
+                                <ListGroup.Item style={{ textAlign: 'center' }}>
+                                    <Spinner animation="border" role="status" /> Logging In...
+                                </ListGroup.Item> : <></>
+                        }
                     </ListGroup>
                 </Form>
             </Col>
