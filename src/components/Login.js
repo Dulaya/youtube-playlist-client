@@ -31,9 +31,9 @@ const Login = () => {
         }
 
         try {
-            const { data } = await axios.post(loginURL, userInfo);
-
             setLoggingStatus(true);
+
+            const { data } = await axios.post(loginURL, userInfo);
 
             const token = data;
             const decoded = jwt_decode(token);

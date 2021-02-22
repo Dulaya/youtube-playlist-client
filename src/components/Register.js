@@ -29,9 +29,9 @@ const Register = () => {
         }
 
         try {
-            await axios.post(registerURL, userInfo);
+            setRegisteringStatus(true);
 
-            //setRegisteringStatus(true);
+            await axios.post(registerURL, userInfo);
 
             history.push('/login');
         } catch (error) {
@@ -92,12 +92,12 @@ const Register = () => {
                             <ListGroup.Item >
                                 • Your account, including email and posts, may be deleted from the database at the admin's discretion.
                             </ListGroup.Item>
-                            {/*
+                            {
                                 registeringStatus ?
                                     <ListGroup.Item style={{ textAlign: 'center' }}>
                                         <Spinner animation="border" role="status" /> Registering...
                                 </ListGroup.Item> : <></>
-                            */}
+                            }
                         </ListGroup>
                     </Form>
                 </Col>
