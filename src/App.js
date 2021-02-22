@@ -13,6 +13,7 @@ import Demo from './components/Demo';
 import Register from './components/Register';
 import Login from './components/Login';
 import User from './components/User';
+import About from './components/About';
 
 const linkStyle = {
   color: 'white',
@@ -53,6 +54,7 @@ function App() {
                     <Link style={linkStyle} to='/demo'>Demo</Link>
                     <Link style={linkStyle} to='/login'>Login</Link>
                     <Link style={linkStyle} to='/register'>Register</Link>
+                    <Link style={linkStyle} to='/about'>About</Link>
                   </> :
                   <Link style={linkStyle} to={`/${currentUser}`} >
                     {currentUser}'s Playlist
@@ -71,6 +73,9 @@ function App() {
           </Route>
           <Route exact path='/register'>
             <Register />
+          </Route>
+          <Route exact path='/about'>
+            <About />
           </Route>
 
           {
