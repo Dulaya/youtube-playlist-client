@@ -34,10 +34,11 @@ const Register = () => {
             await axios.post(registerURL, userInfo);
 
             history.push('/login');
-        } catch (error) {
+        } catch (error) {            
+            setRegisteringStatus(false);
+
             alert(error.response.data);
         }
-
         //Cleanup function to prevent memory leak.
         //https://stackoverflow.com/questions/59794079/memory-leak-issue-when-trying-to-update-state-in-useeffect-react-native
         return () => setRegisteringStatus(false);
@@ -83,6 +84,12 @@ const Register = () => {
                                     Switch to Login
                                 </Button>
                             </ListGroup.Item>
+                            {
+                                registeringStatus ?
+                                    <ListGroup.Item style={{ textAlign: 'center' }}>
+                                        <Spinner animation="border" role="status" /> Registering...
+                                </ListGroup.Item> : <></>
+                            }
                             <ListGroup.Item >
                                 • This app is for demo purpose only.
                             </ListGroup.Item>
@@ -92,12 +99,6 @@ const Register = () => {
                             <ListGroup.Item >
                                 • Your account, including email and posts, may be deleted from the database at the admin's discretion.
                             </ListGroup.Item>
-                            {
-                                registeringStatus ?
-                                    <ListGroup.Item style={{ textAlign: 'center' }}>
-                                        <Spinner animation="border" role="status" /> Registering...
-                                </ListGroup.Item> : <></>
-                            }
                         </ListGroup>
                     </Form>
                 </Col>

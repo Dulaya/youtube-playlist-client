@@ -49,6 +49,8 @@ const Login = () => {
             //If correct credential, redirect to user page.
             history.push(`/${decoded.data.userName}`);
         } catch (error) {
+            setLoggingStatus(false);
+            
             //Update token state to blank if login fail
             setCurrentToken('');
 
