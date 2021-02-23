@@ -31,7 +31,15 @@ const About = () => {
                             Users may also upload pictures associated with the videos.
                         </p>
                         <p style={{ textAlign: 'left' }}>
-                            This web app was created by Dulaya Saennok using the MERN stack.
+                            This web app was created by <span variant='outline-dark' style={{ 
+                                color: 'blue',
+                                cursor: 'pointer',
+                                margin: '2.5px',
+                                padding: '2.5px',
+                                textDecoration: 'underline',
+                             }} 
+                            onClick={() => openInNewTab('https://dulayasaennok.com')}>
+                            Dulaya Saennok</span> using the MERN stack.
                             Source code can be found on GitHub.
                         </p>
                         <Button variant='outline-dark' style={{ margin: '5px' }} onClick={() => openInNewTab('https://github.com/Dulaya/youtube-playlist-client')}>
